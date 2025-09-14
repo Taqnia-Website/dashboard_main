@@ -7,17 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-
+import { useToast } from '@/components/ui/use-toast';
+import { useEffect } from "react";
+import { fetchClients as apiFetchClients } from "@/services/clients";
 const Clients = () => {
-  const [rows, setRows] = useState([
-    { id: "1", client: "شركة ألف", project: "موقع إلكتروني", projectStatus: "جاري", status: "نشط", requirements: "تطوير موقع تعريفي متعدد اللغات مع صفحة تواصل" },
-    { id: "2", client: "شركة باء", project: "تطبيق موبايل", projectStatus: "مكتمل", status: "متابع", requirements: "تطبيق iOS/Android لطلب المنتجات وتتبع الشحنات" },
-  ]);
+  const [rows, setRows] = useState([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const projectStatusOptions = [
-    { value: "planning", label: "تخطيط" },
-    { value: "جاري", label: "جاري" },
-    { value: "مكتمل", label: "مكتمل" },
+    { value: "new", label: "جديد" },
+    { value: "in_progress", label: "جاري" },
+    { value: "done", label: "مكتمل" },
     { value: "on_hold", label: "متوقف مؤقتاً" },
   ];
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -26,7 +25,7 @@ const Clients = () => {
   const [newProjectStatus, setNewProjectStatus] = useState("planning");
   const [newClientStatus, setNewClientStatus] = useState("نشط");
   const [newRequirements, setNewRequirements] = useState("");
-
+const { toast } = useToast();
   // Details & progress tracking state
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
@@ -38,7 +37,17 @@ const Clients = () => {
   const [selectedAuthorId, setSelectedAuthorId] = useState<string>(teammates[0]?.id || "");
   const [newProgress, setNewProgress] = useState("");
   const [progressByClientId, setProgressByClientId] = useState<Record<string, { text: string; authorId: string; ts: string }[]>>({});
-
+  useEffect(() => {
+    fetchClients();
+  }, []);
+  const fetchClients=async()=>{
+    try{
+      const data=await apiFetchClients();
+      setRows(data);
+    }catch(error:any){
+      toast({title:'خطأ',description:error.message||'حدث خطأ أثناء جلب بيانات العملاء',variant:'destructive'});
+    }
+  };
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -60,7 +69,7 @@ const Clients = () => {
   };
 
   const [query, setQuery] = useState("");
-  const [sortKey, setSortKey] = useState<'client' | 'project' | 'projectStatus' | 'status'>("client");
+  const [sortKey, setSortKey] = useState<'name' | 'project_requirements' | 'customer_status' | 'project_status'>("name");
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>("asc");
 
   const visibleRows = rows
@@ -89,11 +98,10 @@ const Clients = () => {
   const addClient = () => {
     if (!newClient || !newProject) return;
     setRows(prev => [
-      { id: String(Date.now()), client: newClient, project: newProject, projectStatus: newProjectStatus, status: newClientStatus, requirements: newRequirements || "" },
+      { id: String(Date.now()), name: newClient, project_status: newProjectStatus, customer_status: newClientStatus, project_requirements: newRequirements || "" },
       ...prev,
     ]);
     setNewClient("");
-    setNewProject("");
     setNewProjectStatus("planning");
     setNewClientStatus("نشط");
     setNewRequirements("");
@@ -132,16 +140,16 @@ const Clients = () => {
                 </DialogHeader>
                 <div className="grid gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="client">اسم العميل</Label>
-                    <Input id="client" value={newClient} onChange={(e) => setNewClient(e.target.value)} />
+                    <Label htmlFor="name">اسم العميل</Label>
+                    <Input id="name" value={newClient} onChange={(e) => setNewClient(e.target.value)} />
                   </div>
-                  <div className="grid gap-2">
+                  {/* <div className="grid gap-2">
                     <Label htmlFor="project">اسم المشروع</Label>
                     <Input id="project" value={newProject} onChange={(e) => setNewProject(e.target.value)} />
-                  </div>
+                  </div> */}
                   <div className="grid gap-2">
-                    <Label htmlFor="requirements">متطلبات العميل</Label>
-                    <Textarea id="requirements" rows={3} value={newRequirements} onChange={(e) => setNewRequirements(e.target.value)} placeholder="ما الذي يحتاجه العميل بالتحديد؟" />
+                    <Label htmlFor="project_requirements">متطلبات العميل</Label>
+                    <Textarea id="project_requirements" rows={3} value={newRequirements} onChange={(e) => setNewRequirements(e.target.value)} placeholder="ما الذي يحتاجه العميل بالتحديد؟" />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="grid gap-2">
@@ -181,11 +189,11 @@ const Clients = () => {
             <TableCaption>ملخص حالة العملاء ومشاريعهم</TableCaption>
             <TableHeader>
               <TableRow>
-                <TableHead></TableHead>
-                <TableHead className="cursor-pointer" onClick={() => toggleSort('client')}>العميل</TableHead>
-                <TableHead className="cursor-pointer" onClick={() => toggleSort('project')}>المشروع</TableHead>
-                <TableHead className="cursor-pointer" onClick={() => toggleSort('projectStatus')}>حالة المشروع</TableHead>
-                <TableHead className="cursor-pointer" onClick={() => toggleSort('status')}>حالة العميل</TableHead>
+                {/* <TableHead></TableHead> */}
+                <TableHead className="cursor-pointer" onClick={() => toggleSort('name')}>العميل</TableHead>
+                <TableHead className="cursor-pointer" onClick={() => toggleSort('project_requirements')}>المشروع</TableHead>
+                <TableHead className="cursor-pointer" onClick={() => toggleSort('project_status')}>حالة المشروع</TableHead>
+                <TableHead className="cursor-pointer" onClick={() => toggleSort('customer_status')}>حالة العميل</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -194,10 +202,10 @@ const Clients = () => {
                   <TableCell>
                     <input type="checkbox" aria-label="select" checked={selectedIds.has(r.id)} onChange={(e) => { e.stopPropagation(); toggleSelect(r.id); }} />
                   </TableCell>
-                  <TableCell>{r.client}</TableCell>
-                  <TableCell>{r.project}</TableCell>
+                  <TableCell>{r.name}</TableCell>
+                  {/* <TableCell>{r.project}</TableCell> */}
                   <TableCell>
-                    <Select value={r.projectStatus}
+                    <Select value={r.project_status}
                       onValueChange={(val) => setRows(prev => prev.map(row => row.id === r.id ? { ...row, projectStatus: val } : row))}
                     >
                       <SelectTrigger onClick={(e) => e.stopPropagation()}>
@@ -210,7 +218,7 @@ const Clients = () => {
                       </SelectContent>
                     </Select>
                   </TableCell>
-                  <TableCell>{r.status}</TableCell>
+                  <TableCell>{r.customer_status}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -233,7 +241,7 @@ const Clients = () => {
                   <>
                     <div className="grid gap-1">
                       <div className="text-sm text-muted-foreground">العميل</div>
-                      <div className="font-medium">{c.client}</div>
+                      <div className="font-medium">{c.name}</div>
                     </div>
                     <div className="grid gap-1">
                       <div className="text-sm text-muted-foreground">المشروع</div>
@@ -241,7 +249,7 @@ const Clients = () => {
                     </div>
                     <div className="grid gap-1">
                       <div className="text-sm text-muted-foreground">المتطلبات</div>
-                      <div className="text-sm whitespace-pre-wrap">{c.requirements || '—'}</div>
+                      <div className="text-sm whitespace-pre-wrap">{c.project_requirements || '—'}</div>
                     </div>
                     <div className="grid gap-2 border rounded p-3">
                       <div className="font-medium mb-1">إضافة تقدم</div>

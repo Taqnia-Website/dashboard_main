@@ -21,10 +21,10 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
+    const username = formData.get('username') as string;
     const password = formData.get('password') as string;
     
-    await signIn(email, password);
+    await signIn(username, password);
     setIsLoading(false);
   };
 
@@ -50,9 +50,9 @@ const Auth = () => {
                 <Label htmlFor="signin-email">{t('email')}</Label>
                 <Input
                   id="signin-email"
-                  name="email"
-                  type="email"
-                  placeholder="admin@example.com"
+                  name="username"
+                  type="text"
+                  placeholder="username"
                   required
                 />
               </div>

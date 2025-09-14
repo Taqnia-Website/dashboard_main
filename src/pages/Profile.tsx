@@ -7,7 +7,7 @@ import { useState } from "react";
 
 const Profile = () => {
   const { user } = useAuth();
-  const [name, setName] = useState(user?.user_metadata?.name || "");
+  const [name, setName] = useState(user.fullName || "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");

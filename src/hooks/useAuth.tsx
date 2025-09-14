@@ -13,7 +13,7 @@ interface AuthUser {
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any | null }>;
+  signIn: (username: string, password: string) => Promise<{ error: any | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -35,16 +35,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const me = await getMe();
         setUser(me);
       } catch (err) {
-        localStorage.removeItem('auth_token');
+         localStorage.removeItem('auth_token');
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (username: string, password: string) => {
     try {
-      const result = await apiLogin({ email, password });
+      const result = await apiLogin({ username, password });
       localStorage.setItem('auth_token', result.token);
       setUser(result.user);
       toast({ title: "تم تسجيل الدخول بنجاح", description: "مرحباً بك في لوحة التحكم" });
