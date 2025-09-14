@@ -1,10 +1,14 @@
+
+
+
 export interface HttpClientConfig {
   baseUrl: string;
   getToken: () => string | null;
 }
 
 const defaultConfig: HttpClientConfig = {
-  baseUrl: import.meta.env.VITE_API_BASE_URL || "",
+  // baseUrl: import.meta.env.VITE_API_BASE_URL || "",
+  baseUrl: import.meta.env.VITE_API_BASE_URL|| "",
   getToken: () => localStorage.getItem("auth_token"),
 };
 
@@ -45,6 +49,12 @@ export async function httpRequest<TResponse, TBody = unknown>(
     try {
       const errorJson = await response.json();
       message = (errorJson && (errorJson.message || errorJson.error)) || message;
+      if(response.status==401){
+    localStorage.removeItem("auth_token");
+    window.location.href="/auth";
+    
+  }
+
     } catch (_) {
       // ignore
     }
@@ -52,6 +62,11 @@ export async function httpRequest<TResponse, TBody = unknown>(
   }
 
   if (response.status === 204) {
+    return undefined as unknown as TResponse;
+  }
+  if(response.status==401){
+    localStorage.removeItem("auth_token");
+    window.location.href="/login";
     return undefined as unknown as TResponse;
   }
 

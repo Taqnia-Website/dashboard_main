@@ -13,12 +13,10 @@ import { useToast } from '@/components/ui/use-toast';
 
 interface Review {
   id: string;
-  customer_name: string;
-  rating: number;
+  name: string;
+  rate: number;
   comment: string | null;
-  country_code: string | null;
-  country_name: string | null;
-  created_at: string;
+  country: string | null;
 }
 
 const countries = [
@@ -165,13 +163,13 @@ const Reviews = () => {
                   <Input
                     id="customer_name"
                     name="customer_name"
-                    defaultValue={editingReview?.customer_name || ''}
+                    defaultValue={editingReview?.name || ''}
                     required
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="rating">{t('rating')}</Label>
-                  <Select name="rating" defaultValue={editingReview?.rating?.toString() || '5'}>
+                  <Select name="rating" defaultValue={editingReview?.rate?.toString() || '5'}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -187,7 +185,7 @@ const Reviews = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="country_code">{t('country')}</Label>
-                <Select name="country_code" defaultValue={editingReview?.country_code || ''}>
+                <Select name="country_code" defaultValue={editingReview?.country || ''}>
                   <SelectTrigger>
                     <SelectValue placeholder="اختر الدولة" />
                   </SelectTrigger>
@@ -229,14 +227,14 @@ const Reviews = () => {
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">{getCountryFlag(review.country_code)}</span>
+                  <span className="text-2xl">{getCountryFlag(review.country)}</span>
                   <div>
-                    <CardTitle className="text-lg">{review.customer_name}</CardTitle>
-                    <CardDescription>{review.country_name}</CardDescription>
+                    <CardTitle className="text-lg">{review.name}</CardTitle>
+                    <CardDescription>{review.country}</CardDescription>
                   </div>
                 </div>
                 <div className="flex gap-1">
-                  {renderStars(review.rating)}
+                  {renderStars(review.rate)}
                 </div>
               </div>
             </CardHeader>

@@ -1,21 +1,18 @@
 import { httpRequest } from "./http";
 
 export interface ReviewDto {
-  id: string;
-  customer_name: string;
-  rating: number;
-  comment?: string | null;
-  country_code?: string | null;
-  country_name?: string | null;
-  created_at: string;
-  updated_at: string;
+ id: string;
+  name: string;
+  rate: number;
+  comment: string | null;
+  country: string | null;
 }
 
 export type CreateReviewDto = Omit<ReviewDto, "id" | "created_at" | "updated_at">;
 export type UpdateReviewDto = Partial<CreateReviewDto> & { id: string };
 
 export async function fetchReviews(): Promise<ReviewDto[]> {
-  return await httpRequest<ReviewDto[]>({ method: "GET", path: "/reviews" });
+  return await httpRequest<ReviewDto[]>({ method: "GET", path: "/api/reviews/" });
 }
 
 export async function createReview(data: CreateReviewDto): Promise<ReviewDto> {

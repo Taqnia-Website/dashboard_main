@@ -2,11 +2,11 @@ import { httpRequest } from "./http";
 
 export interface ProjectDto {
   id: string;
-  name: string;
+  title: string;
   description?: string | null;
   image_url?: string | null;
   status?: string | null;
-  technologies?: string[] | null;
+  tools?: string[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -15,7 +15,7 @@ export type CreateProjectDto = Omit<ProjectDto, "id" | "created_at" | "updated_a
 export type UpdateProjectDto = Partial<CreateProjectDto> & { id: string };
 
 export async function fetchProjects(): Promise<ProjectDto[]> {
-  return await httpRequest<ProjectDto[]>({ method: "GET", path: "/projects" });
+  return await httpRequest<ProjectDto[]>({ method: "GET", path: "/api/company-projects/" });
 }
 
 export async function createProject(data: CreateProjectDto): Promise<ProjectDto> {

@@ -14,10 +14,10 @@ import { useToast } from '@/components/ui/use-toast';
 
 interface Project {
   id: string;
-  name: string;
+  title: string;
   description: string | null;
   image_url: string | null;
-  technologies: string[];
+  tools: string[];
   status: string;
   created_at: string;
 }
@@ -44,7 +44,18 @@ const Projects = () => {
   const fetchProjects = async () => {
     try {
       const data = await apiFetchProjects();
-      setProjects(data || []);
+      const p = data.map(d => ({
+        id: d.id,
+        title: d.title,
+        description: d.description || null,
+        image_url: d.image_url || null,
+        tools: d.tools || [],
+        status: d.status || 'planning',
+        created_at: d.created_at,
+      }));
+
+     
+      setProjects(p);
     } catch (error: any) {
       toast({
         title: 'خطأ',
@@ -59,7 +70,7 @@ const Projects = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    
+
     const imageFile = formData.get('image_file') as File | null;
 
     const projectData = {
@@ -82,7 +93,7 @@ const Projects = () => {
         await createProject(projectData as any);
         toast({ title: 'تم إضافة المشروع بنجاح' });
       }
-      
+
       fetchProjects();
       setIsDialogOpen(false);
       setEditingProject(null);
@@ -97,7 +108,7 @@ const Projects = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('هل أنت متأكد من حذف هذا المشروع؟')) return;
-    
+
     try {
       await deleteProject(id);
       toast({ title: 'تم حذف المشروع بنجاح' });
@@ -171,9 +182,9 @@ const Projects = () => {
       const q = query.trim().toLowerCase();
       if (!q) return true;
       return (
-        p.name.toLowerCase().includes(q) ||
+        p.title.toLowerCase().includes(q) ||
         (p.description || '').toLowerCase().includes(q) ||
-        (p.technologies || []).join(',').toLowerCase().includes(q) ||
+        (p.tools || []).join(',').toLowerCase().includes(q) ||
         p.status.toLowerCase().includes(q)
       );
     })
@@ -228,85 +239,85 @@ const Projects = () => {
           <Button variant="destructive" disabled={selectedIds.size === 0} onClick={handleDeleteSelected}>حذف المحدد</Button>
           <Button variant="outline" disabled={projects.length === 0} onClick={handleDeleteAll}>حذف الكل</Button>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingProject(null)}>
-              <Plus className="h-4 w-4 mr-2" />
-              {t('addProject')}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingProject ? 'تعديل المشروع' : t('addProject')}
-              </DialogTitle>
-              <DialogDescription>
-                املأ البيانات المطلوبة لإضافة أو تعديل المشروع
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <DialogTrigger asChild>
+              <Button onClick={() => setEditingProject(null)}>
+                <Plus className="h-4 w-4 mr-2" />
+                {t('addProject')}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingProject ? 'تعديل المشروع' : t('addProject')}
+                </DialogTitle>
+                <DialogDescription>
+                  املأ البيانات المطلوبة لإضافة أو تعديل المشروع
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">{t('projectName')}</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      defaultValue={editingProject?.title || ''}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="status">{t('status')}</Label>
+                    <Select name="status" defaultValue={editingProject?.status || 'planning'}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="planning">تخطيط</SelectItem>
+                        <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
+                        <SelectItem value="completed">مكتمل</SelectItem>
+                        <SelectItem value="on_hold">متوقف مؤقتاً</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <Label htmlFor="name">{t('projectName')}</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    defaultValue={editingProject?.name || ''}
-                    required
+                  <Label htmlFor="description">{t('description')}</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    defaultValue={editingProject?.description || ''}
+                    rows={3}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="status">{t('status')}</Label>
-                  <Select name="status" defaultValue={editingProject?.status || 'planning'}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="planning">تخطيط</SelectItem>
-                      <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
-                      <SelectItem value="completed">مكتمل</SelectItem>
-                      <SelectItem value="on_hold">متوقف مؤقتاً</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="technologies">{t('technologies')}</Label>
+                  <Input
+                    id="technologies"
+                    name="technologies"
+                    placeholder="React, TypeScript, Node.js"
+                    defaultValue={editingProject?.tools?.join(', ') || ''}
+                  />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">{t('description')}</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  defaultValue={editingProject?.description || ''}
-                  rows={3}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="technologies">{t('technologies')}</Label>
-                <Input
-                  id="technologies"
-                  name="technologies"
-                  placeholder="React, TypeScript, Node.js"
-                  defaultValue={editingProject?.technologies?.join(', ') || ''}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="image_file">{t('projectImage')}</Label>
-                <Input
-                  id="image_file"
-                  name="image_file"
-                  type="file"
-                  accept="image/*"
-                />
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  {t('cancel')}
-                </Button>
-                <Button type="submit">
-                  {t('save')}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+                <div className="space-y-2">
+                  <Label htmlFor="image_file">{t('projectImage')}</Label>
+                  <Input
+                    id="image_file"
+                    name="image_file"
+                    type="file"
+                    accept="image/*"
+                  />
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                    {t('cancel')}
+                  </Button>
+                  <Button type="submit">
+                    {t('save')}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -317,7 +328,7 @@ const Projects = () => {
               <div className="aspect-video relative overflow-hidden">
                 <img
                   src={project.image_url}
-                  alt={project.name}
+                  alt={project.title}
                   className="object-cover w-full h-full"
                 />
               </div>
@@ -325,7 +336,7 @@ const Projects = () => {
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-xl">{project.name}</CardTitle>
+                  <CardTitle className="text-xl">{project.title}</CardTitle>
                   <input type="checkbox" aria-label="select" className="mt-1" checked={selectedIds.has(project.id)} onChange={() => toggleSelect(project.id)} />
                 </div>
                 <Badge className={`${getStatusColor(project.status)} text-white`}>
@@ -340,9 +351,9 @@ const Projects = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {project.technologies && project.technologies.length > 0 && (
+                { project.tools && project.tools.length > 0 && (
                   <div className="flex flex-wrap gap-1">
-                    {project.technologies.map((tech, index) => (
+                    {Array.isArray(project.tools) &&project.tools.map((tech, index) => (
                       <Badge key={index} variant="secondary" className="text-xs">
                         {tech}
                       </Badge>
