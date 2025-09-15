@@ -66,14 +66,14 @@ const Reviews = () => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    const selectedCountry = countries.find(c => c.code === formData.get('country_code'));
+    const selectedCountry = countries.find(c => c.code === formData.get('country'));
     
     const reviewData = {
-      customer_name: formData.get('customer_name') as string,
-      rating: parseInt(formData.get('rating') as string),
+      name: formData.get('name') as string,
+      rate: parseInt(formData.get('rate') as string),
       comment: formData.get('comment') as string,
-      country_code: formData.get('country_code') as string,
-      country_name: selectedCountry?.name || null,
+       country: formData.get('country') as string,
+      
     };
 
     try {
@@ -159,17 +159,17 @@ const Reviews = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="customer_name">{t('customerName')}</Label>
+                  <Label htmlFor="name">{t('customerName')}</Label>
                   <Input
-                    id="customer_name"
-                    name="customer_name"
+                    id="name"
+                    name="name"
                     defaultValue={editingReview?.name || ''}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="rating">{t('rating')}</Label>
-                  <Select name="rating" defaultValue={editingReview?.rate?.toString() || '5'}>
+                  <Label htmlFor="rate">{t('rating')}</Label>
+                  <Select name="rate" defaultValue={editingReview?.rate?.toString() || '5'}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -184,8 +184,8 @@ const Reviews = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="country_code">{t('country')}</Label>
-                <Select name="country_code" defaultValue={editingReview?.country || ''}>
+                <Label htmlFor="country">{t('country')}</Label>
+                <Select name="country" defaultValue={editingReview?.country || ''}>
                   <SelectTrigger>
                     <SelectValue placeholder="اختر الدولة" />
                   </SelectTrigger>
@@ -230,7 +230,9 @@ const Reviews = () => {
                   <span className="text-2xl">{getCountryFlag(review.country)}</span>
                   <div>
                     <CardTitle className="text-lg">{review.name}</CardTitle>
-                    <CardDescription>{review.country}</CardDescription>
+                    <CardDescription>{countries.map((e)=>{
+                      if(e.code === review.country) return e.name
+                    })}</CardDescription>
                   </div>
                 </div>
                 <div className="flex gap-1">

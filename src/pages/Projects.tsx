@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Edit, Trash2, Eye, StickyNote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { fetchProjects as apiFetchProjects, createProject, updateProject, deleteProject, bulkDeleteProjects } from '@/services/projects';
 import { useToast } from '@/components/ui/use-toast';
+
 
 interface Project {
   id: string;
@@ -36,6 +37,17 @@ const Projects = () => {
   const [notesOpenFor, setNotesOpenFor] = useState<Project | null>(null);
   const [noteText, setNoteText] = useState("");
   const [notesByProjectId, setNotesByProjectId] = useState<Record<string, string[]>>({});
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string>(
+    editingProject?.image_url || ""
+  );
+  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const selected = e.target.files?.[0];
+    if (selected) {
+      setFile(selected);
+      setPreview(URL.createObjectURL(selected));
+    }
+  }
 
   useEffect(() => {
     fetchProjects();
@@ -48,13 +60,13 @@ const Projects = () => {
         id: d.id,
         title: d.title,
         description: d.description || null,
-        image_url: d.image_url || null,
+        image_url: d.image || null,
         tools: d.tools || [],
         status: d.status || 'planning',
         created_at: d.created_at,
       }));
 
-     
+
       setProjects(p);
     } catch (error: any) {
       toast({
@@ -72,31 +84,30 @@ const Projects = () => {
     const formData = new FormData(e.currentTarget);
 
     const imageFile = formData.get('image_file') as File | null;
+    //form-data
+    const _formData = new FormData();
+    _formData.append('title', formData.get('name') as string);
+    _formData.append('description', formData.get('description') as string);
+    _formData.append('status', formData.get('status') as 'planning' | 'in_progress' | 'completed' | 'on_hold');
+    (formData.get('tools') as string).split(',').map(t => t.trim()).forEach(tool => _formData.append('tools', tool));
+    if (imageFile) _formData.append('image', imageFile);
 
-    const projectData = {
-      name: formData.get('name') as string,
-      description: formData.get('description') as string,
-      // TODO: upload imageFile to storage and set image_url accordingly
-      image_url: editingProject?.image_url ?? null,
-      technologies: (formData.get('technologies') as string).split(',').map(t => t.trim()),
-      status: formData.get('status') as 'planning' | 'in_progress' | 'completed' | 'on_hold',
-    };
 
     try {
       if (editingProject) {
-        // placeholder log until storage is wired
-        if (imageFile) console.log('Selected image file:', imageFile.name);
-        await updateProject(editingProject.id, projectData as any);
+      
+        await updateProject(editingProject.id, _formData as any);
         toast({ title: 'تم تحديث المشروع بنجاح' });
       } else {
-        if (imageFile) console.log('Selected image file:', imageFile.name);
-        await createProject(projectData as any);
+        await createProject(_formData as any);
         toast({ title: 'تم إضافة المشروع بنجاح' });
       }
 
       fetchProjects();
       setIsDialogOpen(false);
       setEditingProject(null);
+      setFile(null);
+      setPreview("");
     } catch (error: any) {
       toast({
         title: 'خطأ',
@@ -170,9 +181,8 @@ const Projects = () => {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'completed': return 'مكتمل';
-      case 'in_progress': return 'قيد التنفيذ';
-      case 'planning': return 'تخطيط';
-      case 'on_hold': return 'متوقف مؤقتاً';
+      case 'active': return 'قيد التنفيذ';
+      case 'paused': return 'متوقف مؤقتاً';
       default: return status;
     }
   };
@@ -272,10 +282,10 @@ const Projects = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="planning">تخطيط</SelectItem>
-                        <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
+
+                        <SelectItem value="active">قيد التنفيذ</SelectItem>
                         <SelectItem value="completed">مكتمل</SelectItem>
-                        <SelectItem value="on_hold">متوقف مؤقتاً</SelectItem>
+                        <SelectItem value="paused">متوقف مؤقتاً</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -290,22 +300,40 @@ const Projects = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="technologies">{t('technologies')}</Label>
+                  <Label htmlFor="tools">{t('technologies')}</Label>
                   <Input
-                    id="technologies"
-                    name="technologies"
+                    id="tools"
+                    name="tools"
                     placeholder="React, TypeScript, Node.js"
-                    defaultValue={editingProject?.tools?.join(', ') || ''}
+                    defaultValue={
+                      Array.isArray(editingProject?.tools)
+                        ? editingProject.tools.join(", ")
+                        : editingProject?.tools || ""
+                    }
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="image_file">{t('projectImage')}</Label>
+                  <Label htmlFor="image">{t('projectImage')}</Label>
                   <Input
-                    id="image_file"
-                    name="image_file"
+                    onChange={handleFileChange}
                     type="file"
                     accept="image/*"
+                     id="image_file"
+                    name="image_file"
+                  // value={editingProject?.image_url || ''}
                   />
+                     
+                  {preview && (
+                    <img
+                      src={preview}
+                      alt="Preview"
+                      className="w-32 h-32 object-cover rounded mb-2"
+                    />
+                  )}
+
+
+
+
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
@@ -351,9 +379,9 @@ const Projects = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                { project.tools && project.tools.length > 0 && (
+                {project.tools && project.tools.length > 0 && (
                   <div className="flex flex-wrap gap-1">
-                    {Array.isArray(project.tools) &&project.tools.map((tech, index) => (
+                    {Array.isArray(project.tools) && project.tools.map((tech, index) => (
                       <Badge key={index} variant="secondary" className="text-xs">
                         {tech}
                       </Badge>
@@ -371,6 +399,7 @@ const Projects = () => {
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
+                  {/* 
                   <Button
                     variant="outline"
                     size="sm"
@@ -378,6 +407,8 @@ const Projects = () => {
                   >
                     <StickyNote className="h-4 w-4" />
                   </Button>
+                 
+                 */}
                   <Button
                     variant="outline"
                     size="sm"
