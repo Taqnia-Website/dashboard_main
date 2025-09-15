@@ -4,7 +4,7 @@ export interface ProjectDto {
   id: string;
   title: string;
   description?: string | null;
-  image_url?: string | null;
+  image?: string | null;
   status?: string | null;
   tools?: string[] | null;
   created_at: string;
@@ -19,19 +19,19 @@ export async function fetchProjects(): Promise<ProjectDto[]> {
 }
 
 export async function createProject(data: CreateProjectDto): Promise<ProjectDto> {
-  return await httpRequest<ProjectDto, CreateProjectDto>({ method: "POST", path: "/projects", body: data });
+  return await httpRequest<ProjectDto, CreateProjectDto>({ method: "POST", path: "/api/company-projects/", body: data,formdata:true });
 }
 
-export async function updateProject(id: string, data: Partial<CreateProjectDto>): Promise<ProjectDto> {
-  return await httpRequest<ProjectDto, Partial<CreateProjectDto>>({ method: "PUT", path: `/projects/${id}`, body: data });
+export async function updateProject(id: string, data: Partial<UpdateProjectDto>): Promise<ProjectDto> {
+  return await httpRequest<ProjectDto, Partial<UpdateProjectDto>>({ method: "PUT", path: `/api/company-projects/${id}/`, body: data,formdata:true });
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  await httpRequest<void>({ method: "DELETE", path: `/projects/${id}` });
+  await httpRequest<void>({ method: "DELETE", path: `/api/company-projects/${id}/` });
 }
 
 export async function bulkDeleteProjects(ids: string[]): Promise<void> {
-  await httpRequest<void, { ids: string[] }>({ method: "POST", path: "/projects/bulk-delete", body: { ids } });
+  await httpRequest<void, { ids: string[] }>({ method: "POST", path: "/api/company-projects/bulk-delete/", body: { ids } });
 }
 
 

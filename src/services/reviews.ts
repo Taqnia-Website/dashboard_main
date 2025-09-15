@@ -16,15 +16,15 @@ export async function fetchReviews(): Promise<ReviewDto[]> {
 }
 
 export async function createReview(data: CreateReviewDto): Promise<ReviewDto> {
-  return await httpRequest<ReviewDto, CreateReviewDto>({ method: "POST", path: "/reviews", body: data });
+  return await httpRequest<ReviewDto, CreateReviewDto>({ method: "POST", path: "/reviews/", body: data });
 }
 
 export async function updateReview(id: string, data: Partial<CreateReviewDto>): Promise<ReviewDto> {
-  return await httpRequest<ReviewDto, Partial<CreateReviewDto>>({ method: "PUT", path: `/reviews/${id}`, body: data });
+  return await httpRequest<ReviewDto, Partial<CreateReviewDto>>({ method: "PUT", path: `/reviews/${id}/`, body: data });
 }
 
 export async function deleteReview(id: string): Promise<void> {
-  await httpRequest<void>({ method: "DELETE", path: `/reviews/${id}` });
+  await httpRequest<void>({ method: "DELETE", path: `/reviews/${id}/` });
 }
 
 export async function bulkDeleteReviews(ids: string[]): Promise<void> {

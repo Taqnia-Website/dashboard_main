@@ -9,23 +9,30 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from '@/components/ui/use-toast';
 import { useEffect } from "react";
-import { fetchClients as apiFetchClients } from "@/services/clients";
+import { fetchClients as apiFetchClients, deleteClient as apiDeleteOneClient, createClient as apiCreateClient, clintDto } from "@/services/clients";
+
 const Clients = () => {
   const [rows, setRows] = useState([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const projectStatusOptions = [
+
+    { value: "active", label: "جاري" },
+    { value: "completed", label: "مكتمل" },
+    { value: "pending", label: "متوقف مؤقتاً" },
+  ];
+
+  const customer_status = [
     { value: "new", label: "جديد" },
     { value: "in_progress", label: "جاري" },
     { value: "done", label: "مكتمل" },
-    { value: "on_hold", label: "متوقف مؤقتاً" },
-  ];
+  ]
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [newClient, setNewClient] = useState("");
   const [newProject, setNewProject] = useState("");
   const [newProjectStatus, setNewProjectStatus] = useState("planning");
   const [newClientStatus, setNewClientStatus] = useState("نشط");
   const [newRequirements, setNewRequirements] = useState("");
-const { toast } = useToast();
+  const { toast } = useToast();
   // Details & progress tracking state
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
@@ -40,12 +47,12 @@ const { toast } = useToast();
   useEffect(() => {
     fetchClients();
   }, []);
-  const fetchClients=async()=>{
-    try{
-      const data=await apiFetchClients();
+  const fetchClients = async () => {
+    try {
+      const data = await apiFetchClients();
       setRows(data);
-    }catch(error:any){
-      toast({title:'خطأ',description:error.message||'حدث خطأ أثناء جلب بيانات العملاء',variant:'destructive'});
+    } catch (error: any) {
+      toast({ title: 'خطأ', description: error.message || 'حدث خطأ أثناء جلب بيانات العملاء', variant: 'destructive' });
     }
   };
   const toggleSelect = (id: string) => {
@@ -59,6 +66,10 @@ const { toast } = useToast();
   const deleteSelected = () => {
     if (selectedIds.size === 0) return;
     setRows((prev) => prev.filter((r) => !selectedIds.has(r.id)));
+    if (selectedIds.size === 1) {
+
+      apiDeleteOneClient(Array.from(selectedIds)[0]);
+    }
     setSelectedIds(new Set());
   };
 
@@ -95,12 +106,36 @@ const { toast } = useToast();
     else { setSortKey(key); setSortDir('asc'); }
   };
 
-  const addClient = () => {
-    if (!newClient || !newProject) return;
-    setRows(prev => [
-      { id: String(Date.now()), name: newClient, project_status: newProjectStatus, customer_status: newClientStatus, project_requirements: newRequirements || "" },
-      ...prev,
-    ]);
+  const addClient = async (e) => {
+
+
+
+    // if (!newClient || !newProject) return;
+
+
+    const newClientData: clintDto = {
+      name: newClient,
+      project_status: newProjectStatus,
+      customer_status: newClientStatus,
+      project_requirements: newRequirements || "",
+      id: "0"
+    };
+    try {
+      console.log(newClientData);
+      await apiCreateClient(newClientData);
+
+      toast({ description: 'تم إضافة العميل بنجاح' });
+      setRows(prev => [
+        { id: String(Date.now()), name: newClient, project_status: newProjectStatus, customer_status: newClientStatus, project_requirements: newRequirements || "" },
+        ...prev,
+      ]);
+
+    } catch (error: any) {
+      toast({ title: 'خطأ', description: error.message || 'حدث خطأ أثناء إضافة العميل', variant: 'destructive' });
+    }
+
+
+
     setNewClient("");
     setNewProjectStatus("planning");
     setNewClientStatus("نشط");
@@ -218,7 +253,11 @@ const { toast } = useToast();
                       </SelectContent>
                     </Select>
                   </TableCell>
-                  <TableCell>{r.customer_status}</TableCell>
+                  <TableCell>{customer_status.map((e) => {
+                    if (e.value == r.customer_status) {
+                      return e.label;
+                    }
+                  })}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -244,8 +283,26 @@ const { toast } = useToast();
                       <div className="font-medium">{c.name}</div>
                     </div>
                     <div className="grid gap-1">
-                      <div className="text-sm text-muted-foreground">المشروع</div>
-                      <div className="font-medium">{c.project}</div>
+                      <div className="text-sm text-muted-foreground">حالة المشروع</div>
+                      <div className="font-medium">
+                        
+                         <Select value={c.project_status}
+                      onValueChange={(val) => setRows(prev => prev.map(row => row.id === c.id ? { ...row, projectStatus: val } : row))}
+                    >
+                      <SelectTrigger onClick={(e) => e.stopPropagation()}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projectStatusOptions.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+              
+                        
+                        
+                        
+                        </div>
                     </div>
                     <div className="grid gap-1">
                       <div className="text-sm text-muted-foreground">المتطلبات</div>
@@ -273,7 +330,7 @@ const { toast } = useToast();
                         </div>
                       </div>
                     </div>
-                    <div className="grid gap-2">
+                    {/* <div className="grid gap-2">
                       <div className="font-medium">سجل التقدم</div>
                       {progressByClientId[activeClientId]?.length ? (
                         <ul className="space-y-2">
@@ -290,7 +347,7 @@ const { toast } = useToast();
                       ) : (
                         <div className="text-xs text-muted-foreground">لا يوجد تقدم مسجّل بعد</div>
                       )}
-                    </div>
+                    </div> */}
                   </>
                 );
               })()}
